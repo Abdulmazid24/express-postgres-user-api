@@ -1,25 +1,54 @@
-# The Ultimate Engineering Masterpiece: Modular Architecture & Relational DB Deep Dive
+# The Ultimate Deep-Dive: Modular Architecture Line-by-Line Anatomy
 
 **Author:** Abdul Mazid  
 **Profile:** Full-Stack MERN Developer | Distributed Systems Enthusiast  
 **Date:** May 16, 2026
 
-একজন সফটওয়্যার ইঞ্জিনিয়ার হিসেবে আমরা জানি, প্রোজেক্ট স্কেল (Scale) করার সবচেয়ে বড় চ্যালেঞ্জ হলো আর্কিটেকচার। আগের ভার্সনে আমাদের পুরো প্রজেক্ট ছিল "Monolithic" (সব কোড `server.ts` ফাইলে)। কিন্তু রিয়েল-ওয়ার্ল্ড এন্টারপ্রাইজ অ্যাপ্লিকেশনে এভাবে কাজ হয় না। 
-
-তাই মডিউল-৮ এ এসে আমরা কোডকে **Modular Structure (MVC Pattern এর কাছাকাছি)** এ রিফ্যাক্টর করেছি। শুধু তাই নয়, আমরা ইউজার এবং প্রোফাইলের মধ্যে "Relational Database" এর কোর কনসেপ্ট (Foreign Key, ON DELETE CASCADE) ইমপ্লিমেন্ট করেছি। 
-
-এই নোটটি কোনো সাধারণ সামারি নয়। এটি প্রতিটি ফাইল, তাদের ভেতরের ইন্টারনাল রিলেশন এবং "কোডটি কেন লেখা হলো" তার একটি "PhD Level" অ্যানাটমি!
+একজন বিশ্বসেরা ইঞ্জিনিয়ার হতে হলে কোডের শুধু আউটপুট দেখলে হয় না, বরং "প্রতিটি লাইন কী কাজ করছে এবং কেন করছে"—তার পেছনের বিজ্ঞান বুঝতে হয়। এই নোটে আমি আমাদের প্রোজেক্টের পুরো মডুলার আর্কিটেকচার (MVC Pattern) এবং রিলেশনাল ডাটাবেসের কোডকে "মাইক্রোস্কোপিক লেভেলে" ধরে ধরে এক্সপ্লেইন করেছি।
 
 ---
 
-## ১. The Core Separation: `server.ts` বনাম `app.ts`
-আগে আমাদের সার্ভার স্টার্ট করা এবং এপিআই রাউটিং—সব এক ফাইলে ছিল। এখন আমরা একে দুই ভাগ করেছি। কেন? "Separation of Concerns" (SoC) এর জন্য।
+## ১. এনভায়রনমেন্ট এবং ডাটাবেস লেয়ার (Core Configuration)
 
-### ১.১. `src/server.ts` (The Entry Point)
+### ১.১ `src/config/env.ts` (পরিবেশ সেটআপ)
 ```typescript
-import app from './app';
-import { initDB } from './db';
+import dotenv from 'dotenv';
+import path from 'path';
 
+dotenv.config({ path: path.join(process.cwd(), '.env') });
+
+const config = {
+  connection_string: process.env.CONNECTION_STRING as string,
+  port: process.env.PORT as string,
+};
+```
+*   **`dotenv.config(...)`:** এই লাইনটি `.env` ফাইলের ডেটাগুলোকে Node.js এর মেমোরিতে (RAM) লোড করে।
+*   **`process.cwd()`:** CWD মানে "Current Working Directory"। আপনি যে ফোল্ডার থেকে সার্ভার রান করছেন, সেটির পাথ এটি অটোমেটিক বের করে নেয়।
+*   **`as string`:** এটি টাইপস্ক্রিপ্টের একটি ম্যাজিক যাকে বলা হয় Type Assertion। আমরা কম্পাইলারকে গ্যারান্টি দিচ্ছি যে, "তুমি চিন্তা করো না, `CONNECTION_STRING` এর মান অবশ্যই স্ট্রিং হবে, `undefined` হবে না।"
+
+### ১.২ `src/db/index.ts` (ডাটাবেস কানেকশন ও স্কিমা)
+```typescript
+export const pool = new Pool({ connectionString: config.connection_string });
+```
+*   **`new Pool(...)`:** এটি ডাটাবেসের সাথে একটি পার্মানেন্ট কানেকশন পুল (Connection Pipeline) তৈরি করে। ক্লায়েন্টের বদলে পুল ব্যবহার করার কারণ হলো, এটি মেমোরিতে ১০-২০টি কানেকশন আগে থেকেই রেডি রাখে। ফলে বারবার TCP হ্যান্ডশেক করতে হয় না এবং সার্ভার রকেটের মতো ফাস্ট কাজ করে।
+
+```sql
+CREATE TABLE IF NOT EXISTS profiles(
+  id SERIAL PRIMARY KEY,
+  user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  bio TEXT,
+...
+```
+*   **`IF NOT EXISTS`:** এটি চেক করে যে ডাটাবেসে আগে থেকেই `profiles` নামে কোনো টেবিল আছে কি না। থাকলে সে নতুন করে আর বানাবে না।
+*   **`REFERENCES users(id)`:** এটি হলো ডাটাবেসের **Foreign Key**। এটি ডাটাবেসকে বলে দিচ্ছে, "আমার টেবিলের `user_id` কলামে শুধু সেই আইডিতেই প্রোফাইল বানাতে পারবে, যেই আইডির ইউজার `users` টেবিলে আগে থেকেই আছে।" এটি ডাটাবেসে অবৈধ ডাটা ঢুকতে বাধা দেয়।
+*   **`ON DELETE CASCADE`:** এটি একটি স্বয়ংক্রিয় ট্রিগার। যদি কখনো `users` টেবিল থেকে ইউজারটি ডিলিট হয়ে যায়, তবে ডাটাবেস নিজে থেকেই এই `profiles` টেবিলে এসে ওই ইউজারের প্রোফাইলটিও ডিলিট করে দেবে। এর ফলে মেমোরিতে কোনো আবর্জনা (Orphan Data) জমে থাকে না।
+
+---
+
+## ২. অ্যাপ্লিকেশনের হার্ট ও ব্রেইন: `server.ts` বনাম `app.ts`
+
+### ২.১ `src/server.ts` (The Entry Point)
+```typescript
 const main = () => {
   initDB();
   app.listen(config.port, () => {
@@ -28,102 +57,93 @@ const main = () => {
 };
 main();
 ```
-**ইঞ্জিনিয়ারিং ডাইভ:** 
-এই ফাইলের একমাত্র দায়িত্ব হলো অ্যাপ্লিকেশন চালু করা। এটি প্রথমে `initDB()` কল করে ডাটাবেস কানেকশন এবং টেবিলগুলো তৈরি (বা ভেরিফাই) করে। তারপর `app.listen()` কল করে। 
-**কেন আলাদা করলাম?** কালকে যদি আমি Express.js বাদ দিয়ে Fastify বা অন্য কোনো ফ্রেমওয়ার্ক ব্যবহার করি, আমার পুরো রাউটিং লজিক চেঞ্জ করতে হবে না, শুধু এই এন্ট্রি পয়েন্টটা মডিফাই করলেই হবে। এছাড়া, টেস্টিং (যেমন Jest/Supertest) করার সময় আমরা সার্ভার রান না করেই শুধু `app` কে টেস্ট করতে পারি।
+*   **কেন আলাদা ফাইল?** সার্ভার স্টার্ট করা এবং পোর্ট লিসেন করা একটি কাজ, আর API রাউটিং করা সম্পূর্ণ আলাদা কাজ (Separation of Concerns)। কালকে যদি আমরা টেস্টিং (Jest) করি, তখন আমাদের শুধু `app` দরকার হবে, `app.listen` দরকার হবে না। তাই একে আলাদা ফাইলে রাখা হয়েছে।
 
-### ১.২. `src/app.ts` (The Express Heart)
+### ২.২ `src/app.ts` (The Traffic Police)
 ```typescript
-const app: Application = express();
 app.use(express.json());
 app.use('/api/users', userRoute);
 app.use('/api/profile', profileRoute);
 ```
-**ইঞ্জিনিয়ারিং ডাইভ:** 
-এখানে কোনো ডাটাবেস কানেকশন নেই, কোনো পোর্ট লিসেনিং নেই। এখানে শুধু এক্সপ্রেসের গ্লোবাল মিডলওয়্যার (Middleware) এবং মেইন রাউটিং ডিফাইন করা হয়েছে। 
-**কীভাবে কাজ করে?** ক্লায়েন্ট যখন `http://localhost:5000/api/users` এ হিট করবে, এক্সপ্রেস এই পাথটি ম্যাচ করে রিকোয়েস্টটিকে সোজা `userRoute` এর কাছে পাঠিয়ে দেবে। এটি অনেকটা ট্রাফিক পুলিশের মতো কাজ করে।
+*   **`express.json()`:** ইন্টারনেট দিয়ে ডাটা আদান-প্রদান হয় বাইনারি বাফার (Buffer) হিসেবে। এই মিডলওয়্যারটি সেই বাফারকে পার্স করে জাভাস্ক্রিপ্ট অবজেক্টে রূপান্তর করে এবং `req.body` তে যুক্ত করে।
+*   **`app.use('/api/users', userRoute)`:** ক্লায়েন্ট যখন `localhost:5000/api/users` এ হিট করবে, এক্সপ্রেস এই পাথটি ম্যাচ করে রিকোয়েস্টটিকে সোজা `userRoute` এর কাছে পাঠিয়ে দেবে।
 
 ---
 
-## ২. Database Layer: Relational Schema & Pooling
-`src/db/index.ts` ফাইলে আমরা কানেকশন পুলিং এবং স্কিমা (Schema) ডিফাইন করেছি।
+## ৩. মডুলার আর্কিটেকচার: ইউজার মডিউল (MVC Deep Dive)
 
-### ২.১. The Connection Pool
-```typescript
-export const pool = new Pool({ connectionString: config.connection_string });
-```
-**কেন Pool?** প্রতিবার রিকোয়েস্ট আসলে ডাটাবেসের সাথে নতুন TCP/IP কানেকশন বানানো অনেক এক্সপেনসিভ। `Pool` মেমোরিতে আগে থেকেই কিছু কানেকশন তৈরি করে রাখে (Warm connections)। রিকোয়েস্ট আসলে সাথে সাথে রেসপন্স দিতে পারে, ফলে লেটেন্সি অনেক কমে যায়।
+প্রতিটি মডিউলে (যেমন `user`) ৪টি করে ফাইল আছে। চলুন দেখি একটি રিকোয়েস্ট কীভাবে এক ফাইল থেকে অন্য ফাইলে যায়।
 
-### ২.২. Relational Tables (Users & Profiles)
-```sql
-CREATE TABLE IF NOT EXISTS profiles(
-  id SERIAL PRIMARY KEY,
-  user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  bio TEXT,
-...
-)
-```
-**ইঞ্জিনিয়ারিং ডাইভ (কার সাথে কার কী সম্পর্ক?):**
-*   **`REFERENCES users(id)` (Foreign Key):** এটি রিলেশনাল ডাটাবেসের মূল শক্তি। `profiles` টেবিলের `user_id` কলামটি সরাসরি `users` টেবিলের `id` এর সাথে লিঙ্কড। এর মানে হলো, এমন কোনো ইউজারের প্রোফাইল আপনি তৈরি করতে পারবেন না, যার কোনো অস্তিত্ব `users` টেবিলে নেই। এটি ডাটাবেস লেভেলে "Data Integrity" বা ডাটার বিশুদ্ধতা নিশ্চিত করে।
-*   **`UNIQUE`:** একজন ইউজারের একটাই প্রোফাইল থাকবে (1-to-1 relationship)। তাই `user_id` কে UNIQUE করা হয়েছে। যদি কেউ একই ইউজারের দ্বিতীয় প্রোফাইল বানাতে চায়, ডাটাবেস সরাসরি এরর দেবে।
-*   **`ON DELETE CASCADE`:** এটি একটি ম্যাজিকাল কমান্ড। যদি কোনোদিন `users` টেবিল থেকে কোনো ইউজারকে ডিলিট করা হয়, ডাটাবেস নিজে থেকেই ওই ইউজারের প্রোফাইল ডাটা `profiles` টেবিল থেকে ডিলিট করে দেবে! এর জন্য ব্যাকএন্ডে আলাদা কোনো কোড লিখতে হবে না। এটি অরফ্যান ডাটা (Orphan data - যে ডাটার মালিক নেই) জমতে দেয় না।
-
----
-
-## ৩. The Modular Architecture (Layer by Layer)
-আমরা `src/modules` ফোল্ডারের ভেতর প্রতিটি এন্টিটি (যেমন `user`, `profile`) এর জন্য আলাদা ফোল্ডার করেছি। প্রতিটি ফোল্ডারে ৪টি লেয়ার আছে। চলুন দেখি একটি রিকোয়েস্ট কীভাবে এই লেয়ারগুলো পার হয়।
-
-### লেয়ার ১: The Route (`user.route.ts` / `profile.route.ts`)
+### ৩.১ `user.route.ts` (The Router)
 ```typescript
 const router = Router();
 router.post('/', userController.createUser);
+router.get('/:id', userController.getSingleUser);
 ```
-**ভূমিকা:** এটি হলো এন্ট্রি গেট। `app.ts` থেকে যখন রিকোয়েস্ট এখানে আসে, এটি দেখে মেথড কী (GET/POST/PUT)? মেথড অনুযায়ী সে রিকোয়েস্টটিকে নির্দিষ্ট "কন্ট্রোলার" এর কাছে পাঠায়। এখানে কোনো লজিক থাকে না।
+*   **`Router()`:** এটি এক্সপ্রেসের একটি মিনি-অ্যাপ্লিকেশন। এর কাজ শুধু ইনকামিং রিকোয়েস্টের মেথড (GET/POST/PUT) দেখা এবং সেই অনুযায়ী সঠিক কন্ট্রোলারকে কল করা। এখানে কোনো লজিক থাকে না।
 
-### লেয়ার ২: The Controller (`user.controller.ts` / `profile.controller.ts`)
+### ৩.২ `user.controller.ts` (The Manager)
 ```typescript
 const createUser = async (req: Request, res: Response) => {
   try {
     const result = await userService.createUserIntoDB(req.body);
-    res.status(201).json({ ... });
-  } catch (error) { ... }
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 ```
-**ভূমিকা:** কন্ট্রোলারের দায়িত্ব হলো ক্লায়েন্টের কাছ থেকে ডাটা (`req.body`, `req.params`) রিসিভ করা এবং সার্ভিস লেয়ারকে কল করা। সার্ভিস লেয়ার যখন কাজ শেষ করে ডাটা ফেরত দেয়, কন্ট্রোলার সেই ডাটা সুন্দর করে সাজিয়ে ক্লায়েন্টকে রেসপন্স (`res.status().json()`) পাঠায়।
-**ইঞ্জিনিয়ারিং রুল:** কন্ট্রোলারের ভেতর কখনোই ডাটাবেসের কুয়েরি বা বিজনেস লজিক লেখা উচিত নয়। এর কাজ শুধু ম্যানেজমেন্ট (Request রিসিভ করা, Response পাঠানো)।
+*   **কী কাজ করছে?** কন্ট্রোলার হলো একজন ম্যানেজারের মতো। সে ফ্রন্টএন্ড থেকে আসা ডাটা (`req.body`) রিসিভ করে এবং সার্ভিসকে (Service) বলে, "এই ডাটা নাও এবং ডাটাবেসে সেভ করে আমাকে রেজাল্ট দাও।"
+*   **`res.status(201).json(...)`:** সার্ভিস যখন ডাটা সেভ করে রেজাল্ট ফেরত দেয়, কন্ট্রোলার তখন সুন্দর একটি JSON ফরম্যাট বানিয়ে ফ্রন্টএন্ডে পাঠিয়ে দেয়। (201 মানে Created)।
+*   **কেন আলাদা?** কন্ট্রোলারের ভেতরে কখনোই ডাটাবেসের SQL কুয়েরি লেখা উচিত নয়। কারণ কালকে যদি আমরা PostgreSQL এর বদলে MongoDB ব্যবহার করি, তবে কন্ট্রোলারে হাত দেওয়ার কোনো প্রয়োজন হবে না, শুধু সার্ভিসে হাত দিলেই হবে। এটিই ক্লিন কোডের মূলমন্ত্র।
 
-### লেয়ার ৩: The Service (`user.service.ts` & `profile.service.ts`)
+### ৩.৩ `user.service.ts` (The Real Worker)
 ```typescript
-const createProfileIntoDB = async (payLoad: any) => {
-  const user = await pool.query(`SELECT * FROM users WHERE id=$1`, [user_id]);
-  if (user.rows.length === 0) throw new Error('User not found');
-
+const createUserIntoDB = async (payLoad: IUser) => {
+  const { name, email, password, age } = payLoad;
   const result = await pool.query(
-    `INSERT INTO profiles(...) VALUES(...) RETURNING *`, [...]
+    `INSERT INTO users(name,email,password,age) VALUES($1,$2,$3,$4) RETURNING *`,
+    [name, email, password, age]
   );
   return result;
 };
 ```
-**ভূমিকা:** এটি হলো অ্যাপ্লিকেশনের "ব্রেইন" (Brain)। যাবতীয় বিজনেস লজিক এবং ডাটাবেস অপারেশন এখানে হয়।
-**ইঞ্জিনিয়ারিং ডাইভ (`profile.service.ts`):** 
-প্রোফাইল তৈরি করার আগে আমরা প্রথম কুয়েরি করে চেক করছি `users` টেবিলে ওই ইউজারটি আসলেই আছে কি না। যদি না থাকে, আমরা কাস্টম এরর (`throw new Error('User not found')`) থ্রো করছি। ডাটাবেস লেভেলের ফরেন-কী এররের উপর নির্ভর না করে অ্যাপ্লিকেশন লেভেলেই আমরা ভ্যালিডেশন করে নিচ্ছি। এটি প্রোডাকশন-গ্রেড কোডের লক্ষণ।
+*   **কী কাজ করছে?** এটি হলো মূল বিজনেস লজিক। কন্ট্রোলার একে কল করে। সে ডাটাবেসের পুল (`pool.query`) ব্যবহার করে সরাসরি SQL কুয়েরি চালায়।
+*   **`VALUES($1, $2, ...)`:** এটি হলো প্যারামিটারাইজড কুয়েরি (Parameterized Query)। ডাটা সরাসরি SQL এ না বসিয়ে `$1` দিয়ে বসানোর কারণ হলো, এটি হ্যাকারদের SQL Injection থেকে ডাটাবেসকে ১০০% নিরাপদ রাখে।
+*   **`RETURNING *`:** ইনসার্ট হওয়ার পর নতুন ডাটাটি দেখার জন্য আমাদের আবার `SELECT` কুয়েরি চালাতে হয় না। এই কমান্ডটি একই নেটওয়ার্ক কলের মধ্যে ডাটাটি ডাটাবেস থেকে ফেরত পাঠায়।
 
-### লেয়ার ৪: The Interface (`user.interface.ts`)
 ```typescript
-export interface IUser { name: string; email: string; ... }
+// Update User in user.service.ts
+`UPDATE users SET name=COALESCE ($1, name), age=COALESCE($3, age) WHERE id=$5 RETURNING *`
 ```
-**ভূমিকা:** টাইপস্ক্রিপ্টের শক্তি! এটি গ্যারান্টি দেয় যে, আমাদের সিস্টেমে ইউজারের ডাটা স্ট্রাকচার কেমন হবে। ডেভেলপমেন্টের সময় কোনো ডেভেলপার ভুল প্রপার্টি পাঠালে টাইপস্ক্রিপ্ট সাথে সাথে কম্পাইল-টাইম এরর দেবে।
+*   **`COALESCE` এর ম্যাজিক:** আপডেট করার সময় ফ্রন্টএন্ড থেকে ইউজার যদি শুধু `age` পাঠায় (নাম না পাঠায়), তবে `$1` এর মান হবে `NULL`। `COALESCE` ফাংশন চেক করে যে, নতুন ভ্যালু ফাঁকা হলে সে ডাটাবেসে থাকা আগের নামটাই রেখে দিবে। এর ফলে একটি রাউট দিয়েই Partial Update (PATCH) এর কাজ হয়ে যাচ্ছে। এটি সম্পূর্ণ Atomic Operation।
+
+### ৩.৪ `profile.service.ts` (Cross-Table Logic)
+```typescript
+const createProfileIntoDB = async (payLoad: any) => {
+  const user = await pool.query(`SELECT * FROM users WHERE id=$1`, [payLoad.user_id]);
+  
+  if (user.rows.length === 0) {
+    throw new Error('User not found');
+  }
+
+  const result = await pool.query(`INSERT INTO profiles(...) VALUES(...) RETURNING *`, [...]);
+  return result;
+};
+```
+*   **লজিকের গভীরতা:** একটি প্রোফাইল তৈরি করার আগে সার্ভিস চেক করছে যে, ওই ইউজারটি আসলে `users` টেবিলে আছে কি না। `user.rows.length === 0` মানে হলো ডাটাবেস কোনো ইউজার পায়নি। তখন আমরা `throw new Error` দিয়ে একটি এরর তৈরি করছি। 
+*   এই এররটি সরাসরি ক্যাচ (Catch) ব্লকে চলে যাবে এবং কন্ট্রোলার সেটি ধরে ক্লায়েন্টকে `500 Internal Server Error` পাঠিয়ে দেবে। ডাটাবেস লেভেলের ফরেন-কী এররের উপর নির্ভর না করে অ্যাপ্লিকেশন লেভেলেই আমরা এই ভ্যালিডেশনটি করে নিচ্ছি।
 
 ---
 
-## উপসংহার (The Big Picture)
+## উপসংহার (The Execution Flow)
 
-আগে আমাদের কোড ছিল একটি ছোট দোকানের মতো—যেখানে ক্যাশিয়ার, সেলসম্যান এবং ম্যানেজার একই ব্যক্তি (`server.ts`)। 
+একটি রিকোয়েস্ট যখন সার্ভারে আসে, তখন তার জার্নিটা ঠিক এমন হয়:
+1.  **Postman** -> `POST http://localhost:5000/api/users`
+2.  **`app.ts`** -> রিকোয়েস্ট রিসিভ করে এবং দেখে পাথ `/api/users`, তাই সে রিকোয়েস্টকে `userRoute` এর কাছে পাঠায়।
+3.  **`user.route.ts`** -> দেখে রিকোয়েস্ট মেথড `POST`, তাই সে ডাটাগুলোকে `userController.createUser` এর কাছে পাঠিয়ে দেয়।
+4.  **`user.controller.ts`** -> ডাটাগুলো (`req.body`) নিয়ে `userService.createUserIntoDB()` ফাংশনকে কল করে এবং রেজাল্টের জন্য অপেক্ষা করে।
+5.  **`user.service.ts`** -> ডাটাবেসের সাথে কানেক্ট করে SQL কুয়েরি চালায়, ডাটা সেভ করে এবং ডাটাবেস থেকে পাওয়া রেজাল্ট কন্ট্রোলারকে ফেরত দেয়।
+6.  **`user.controller.ts`** -> সার্ভিস থেকে রেজাল্ট পাওয়ার পর একটি সুন্দর JSON রেসপন্স বানিয়ে পোস্টম্যানকে (Postman) ফেরত দেয়।
 
-এখন আমরা এটিকে একটি **মাল্টি-ন্যাশনাল কর্পোরেট স্ট্রাকচারে** রূপান্তর করেছি:
-*   **`app.ts`** হলো রিসিপশনিস্ট (যে রিকোয়েস্ট রিসিভ করে ডিপার্টমেন্টে পাঠায়)।
-*   **`*.route.ts`** হলো ডিপার্টমেন্টের সাইনবোর্ড।
-*   **`*.controller.ts`** হলো ডিপার্টমেন্ট ম্যানেজার (যে ক্লায়েন্টের সাথে কথা বলে)।
-*   **`*.service.ts`** হলো আসল ওয়ার্কার বা ইঞ্জিনিয়ার (যে ডাটাবেসের ভেতরে গিয়ে কাজ করে)।
-
-এই মডুলার আর্কিটেকচার এবং রিলেশনাল ডাটাবেস ডিজাইন প্রমাণ করে যে, আমি শুধু ফ্রেমওয়ার্কের উপর নির্ভরশীল নই; আমি সফটওয়্যার ইঞ্জিনিয়ারিংয়ের কোর প্রিন্সিপল (SOLID, Clean Architecture) বুঝি এবং স্কেলেবল সিস্টেম ডিজাইন করতে পারি!
+এভাবেই একটি মনোলিথিক প্রজেক্টকে ভেঙে আমরা একটি প্রফেশনাল, স্কেলেবল এবং এন্টারপ্রাইজ-গ্রেড মডুলার আর্কিটেকচারে (Modular Architecture) রূপান্তর করেছি!
