@@ -92,7 +92,7 @@ app.get('/api/users/:id', async (req: Request, res: Response) => {
       [id]
     );
     if (result.rows.length === 0) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: 'User Not found',
         data: {},
@@ -129,7 +129,7 @@ app.put('/api/users/:id', async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: 'User Not Found',
         data: {},
@@ -162,7 +162,7 @@ app.delete('/api/users/:id', async (req: Request, res: Response) => {
       [id]
     );
     if (result.rowCount === 0) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: 'User Not Found',
       });

@@ -19,7 +19,7 @@ A robust, TypeScript-based RESTful API built with Express.js and PostgreSQL. Thi
 - **Framework**: Express.js (v5 compatible)
 - **Language**: TypeScript (v6)
 - **Database**: PostgreSQL (Neon Serverless DB)
-- **Dependencies**: `pg`, `dotenv`, `cors`, `express`
+- **Dependencies**: `pg`, `dotenv`, `express`
 - **Dev Dependencies**: `tsx`, `typescript`, `@types/express`, `@types/pg`
 
 ## 📁 Project Structure
