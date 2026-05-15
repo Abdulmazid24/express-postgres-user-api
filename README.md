@@ -1,67 +1,103 @@
-# PostgreSQL & Express.js Core Mechanics | Deep Dive 🚀
+# Express & PostgreSQL User Management API
 
-> **A Senior Developer's Exploration of Relational Databases, Raw SQL, and Connection Pooling in Node.js.**
+A robust, TypeScript-based RESTful API built with Express.js and PostgreSQL. This module demonstrates advanced database connectivity, CRUD operations, and secure querying practices using parameterized SQL.
 
-## 📌 Context & Motivation
+## 🚀 Features
 
-As a Full-Stack MERN Developer accustomed to the magic of MongoDB and Mongoose, I built this project with a specific goal: **to strip away the ORM abstractions and deeply understand relational database mechanics at the core level.** 
+- **TypeScript Integrated**: Full type-safety across the application.
+- **Express.js Server**: Fast, unopinionated, minimalist web framework.
+- **PostgreSQL Database**: Relational database integration using the `pg` driver.
+- **Connection Pooling**: Efficient database connection management via `pg.Pool`.
+- **Environment Configuration**: Secure environment variable handling.
+- **Complete CRUD Operations**: Create, Read, Update, and Delete endpoints for user management.
+- **SQL Injection Prevention**: Implementation of parameterized queries.
+- **Smart Updates**: Utilizing SQL `COALESCE` for dynamic partial updates.
 
-While modern frameworks make development faster, true engineering requires understanding what happens under the hood. This repository documents my deep dive into raw SQL queries, TCP/TLS connection pooling, parameterized query execution, and type-safe server architecture using TypeScript and Express 5.
+## 🛠️ Technology Stack
 
-## 🧠 Engineering Highlights & Architectural Decisions
+- **Runtime**: Node.js
+- **Framework**: Express.js (v5 compatible)
+- **Language**: TypeScript (v6)
+- **Database**: PostgreSQL (Neon Serverless DB)
+- **Dependencies**: `pg`, `dotenv`, `express`
+- **Dev Dependencies**: `tsx`, `typescript`, `@types/express`, `@types/pg`
 
-### 1. Raw SQL over ORM (For Now)
-Instead of relying on Prisma or TypeORM, every CRUD operation is written in raw SQL. This intentional constraint enforces a deep understanding of:
-- **Schema Design & Constraints**: Implementing `UNIQUE`, `NOT NULL`, and `DEFAULT` at the database level.
-- **SQL Injection Prevention**: Strict usage of parameterized queries (`$1, $2`) for all client inputs.
-- **Atomic Partial Updates**: Leveraging the SQL `COALESCE` function for thread-safe, dynamic `PUT` / `PATCH` operations without multiple database round-trips.
+## 📁 Project Structure
 
-### 2. Connection Pooling (`pg.Pool`)
-Connecting to a database is an expensive operation. Instead of establishing a new TCP connection per request, this API utilizes `pg.Pool` to maintain a warm pool of connections.
-- Reduces latency from hundreds of milliseconds to single digits.
-- Prepares the application architecture for high-concurrency environments and scaling with tools like `PgBouncer`.
+```text
+src/
+├── config/
+│   └── env.ts         # Environment variable configuration
+└── server.ts          # Main application entry point & API routes
+```
 
-### 3. Modern Tech Stack (2026 Standards)
-- **Express 5.2.x**: Native handling of asynchronous Promise rejections (eliminating the need for repetitive `try/catch` wrappers in the future).
-- **TypeScript 6.0.x**: Utilizing `es2025` compilation targets and strict type-checking for zero-runtime-overhead safety.
-- **Neon Serverless PostgreSQL**: Modern, scale-to-zero cloud database architecture.
+## ⚙️ Setup & Installation
 
-## 📡 API Endpoints (CRUD)
-
-| Method | Endpoint | Description | Deep-Dive Implementation Detail |
-| :--- | :--- | :--- | :--- |
-| **GET** | `/` | Health Check | Validates server instance status. |
-| **POST** | `/api/users` | Create User | Uses `RETURNING *` to fetch the created row in a single network round-trip. |
-| **GET** | `/api/users` | Get All Users | Fetches all records (Future implementation: Pagination via `LIMIT`/`OFFSET`). |
-| **GET** | `/api/users/:id` | Get Single User | B-Tree Indexing lookup via `PRIMARY KEY` for O(log n) read speed. |
-| **PUT** | `/api/users/:id` | Update User | Uses `COALESCE($1, column)` for dynamic, atomic partial updates. |
-| **DELETE** | `/api/users/:id` | Delete User | Checks `result.rowCount` to handle 404s gracefully without returning data. |
-
-## ⚙️ Local Development Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Abdulmazid24/express-postgres-user-api.git
-   ```
-2. **Install dependencies:**
+1. **Clone the repository** (or navigate to the project directory).
+2. **Install dependencies**:
    ```bash
    npm install
    ```
-3. **Configure Environment:**
-   Create a `.env` file with your PostgreSQL connection string:
+3. **Configure Environment Variables**:
+   Create a `.env` file in the root directory and add the following:
    ```env
-   CONNECTION_STRING="your_neon_db_connection_string_here"
+   CONNECTION_STRING="your_postgresql_connection_string"
    PORT=5000
    ```
-4. **Run the server:**
+4. **Run the Development Server**:
    ```bash
    npm run dev
    ```
+   *The server will start on `http://localhost:5000` (or your configured port) and automatically initialize the database tables.*
 
-## 👨‍💻 About The Author
+## 📡 API Endpoints
 
-**Abdul Mazid**  
-*Full-Stack MERN Developer | Distributed Systems Enthusiast*  
-[LinkedIn Profile](https://www.linkedin.com/in/abdul-mazid)
+### 1. Health Check
+- **GET** `/`
+- **Description**: Checks if the server is running.
+- **Response**: `200 OK`
 
-*Documenting the journey from relying on framework magic to mastering core software engineering principles.*
+### 2. Create User
+- **POST** `/api/users`
+- **Body Payload**:
+  ```json
+  {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "password": "securepassword",
+    "age": 28
+  }
+  ```
+- **Description**: Creates a new user in the database.
+
+### 3. Get All Users
+- **GET** `/api/users`
+- **Description**: Retrieves a list of all users.
+
+### 4. Get Single User
+- **GET** `/api/users/:id`
+- **Description**: Retrieves specific user details by ID. Returns `404` if not found.
+
+### 5. Update User
+- **PUT** `/api/users/:id`
+- **Body Payload** (Partial update supported):
+  ```json
+  {
+    "name": "John Updated",
+    "age": 29
+  }
+  ```
+- **Description**: Updates user information dynamically using SQL `COALESCE`.
+
+### 6. Delete User
+- **DELETE** `/api/users/:id`
+- **Description**: Removes a user from the database by ID.
+
+## 👨‍💻 Author Information
+
+- **Name**: Abdul Mazid
+- **Email**: abdulmazid.dev@gmail.com
+- **Phone**: 01621455174
+
+---
+*Developed with a passion for world-class Full-Stack Engineering.*
