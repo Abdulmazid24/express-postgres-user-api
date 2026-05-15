@@ -1,103 +1,91 @@
-# Express & PostgreSQL User Management API
+# Advanced PostgreSQL & Express.js API | Modular Architecture
 
-A robust, TypeScript-based RESTful API built with Express.js and PostgreSQL. This module demonstrates advanced database connectivity, CRUD operations, and secure querying practices using parameterized SQL.
+> **A Senior Developer's Deep Dive into Relational Databases, Modular Design (MVC), and Connection Pooling in Node.js.**
 
-## 🚀 Features
+## 📌 Context & Motivation
 
-- **TypeScript Integrated**: Full type-safety across the application.
-- **Express.js Server**: Fast, unopinionated, minimalist web framework.
-- **PostgreSQL Database**: Relational database integration using the `pg` driver.
-- **Connection Pooling**: Efficient database connection management via `pg.Pool`.
-- **Environment Configuration**: Secure environment variable handling.
-- **Complete CRUD Operations**: Create, Read, Update, and Delete endpoints for user management.
-- **SQL Injection Prevention**: Implementation of parameterized queries.
-- **Smart Updates**: Utilizing SQL `COALESCE` for dynamic partial updates.
+As a Full-Stack MERN Developer accustomed to MongoDB, I built this project to deeply understand relational database mechanics and scalable backend architecture. 
 
-## 🛠️ Technology Stack
+This repository has evolved from a monolithic server file into a **fully modular, scalable architecture**. It demonstrates raw SQL execution, 1-to-1 relational data modeling (Foreign Keys), connection pooling, and the separation of concerns across Route, Controller, and Service layers using Express 5 and TypeScript.
 
-- **Runtime**: Node.js
-- **Framework**: Express.js (v5 compatible)
-- **Language**: TypeScript (v6)
-- **Database**: PostgreSQL (Neon Serverless DB)
-- **Dependencies**: `pg`, `dotenv`, `express`
-- **Dev Dependencies**: `tsx`, `typescript`, `@types/express`, `@types/pg`
+## 🧠 Engineering Highlights & Architectural Decisions
 
-## 📁 Project Structure
+### 1. Modular Architecture (Separation of Concerns)
+The codebase follows a strictly modular, layer-based pattern:
+- **Routes (`*.route.ts`)**: Directs incoming HTTP requests to the appropriate controllers.
+- **Controllers (`*.controller.ts`)**: Handles request/response logic without containing business rules.
+- **Services (`*.service.ts`)**: The "brain" of the application where complex business logic and raw database queries reside.
+- **Entry Points (`server.ts` & `app.ts`)**: Separating server initialization (DB connection, port listening) from Express app configuration (middlewares, global routes) for better testability.
+
+### 2. Relational Database Mechanics (Raw SQL)
+- **Foreign Keys & Constraints**: Implemented 1-to-1 relationships between `users` and `profiles` tables using `user_id INT UNIQUE REFERENCES users(id)`.
+- **Cascading Deletes**: Utilized `ON DELETE CASCADE` to automatically remove orphaned profile data when a parent user is deleted, ensuring strict data integrity at the database level.
+- **SQL Injection Prevention**: Strict usage of parameterized queries (`$1, $2`).
+
+### 3. Connection Pooling (`pg.Pool`)
+Utilizes `pg.Pool` to maintain a warm pipeline of database connections in RAM, dramatically reducing TCP/IP handshake latency for subsequent API requests.
+
+## 📁 Project Structure (Modular)
 
 ```text
 src/
 ├── config/
-│   └── env.ts         # Environment variable configuration
-└── server.ts          # Main application entry point & API routes
+│   └── env.ts             # Environment variables mapping
+├── db/
+│   └── index.ts           # PostgreSQL Pool & Schema initialization
+├── modules/
+│   ├── profile/
+│   │   ├── profile.controller.ts
+│   │   ├── profile.route.ts
+│   │   └── profile.service.ts
+│   └── user/
+│       ├── user.controller.ts
+│       ├── user.interface.ts
+│       ├── user.route.ts
+│       └── user.service.ts
+├── app.ts                 # Express application & middleware setup
+└── server.ts              # Main server entry point
 ```
-
-## ⚙️ Setup & Installation
-
-1. **Clone the repository** (or navigate to the project directory).
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory and add the following:
-   ```env
-   CONNECTION_STRING="your_postgresql_connection_string"
-   PORT=5000
-   ```
-4. **Run the Development Server**:
-   ```bash
-   npm run dev
-   ```
-   *The server will start on `http://localhost:5000` (or your configured port) and automatically initialize the database tables.*
 
 ## 📡 API Endpoints
 
-### 1. Health Check
-- **GET** `/`
-- **Description**: Checks if the server is running.
-- **Response**: `200 OK`
+### User Management (`/api/users`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| **POST** | `/api/users` | Create User (returns created row) |
+| **GET** | `/api/users` | Get All Users |
+| **GET** | `/api/users/:id` | Get Single User via Primary Key lookup |
+| **PUT** | `/api/users/:id` | Update User dynamically using `COALESCE` |
+| **DELETE** | `/api/users/:id` | Delete User (Triggers CASCADE delete on profile) |
 
-### 2. Create User
-- **POST** `/api/users`
-- **Body Payload**:
-  ```json
-  {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "securepassword",
-    "age": 28
-  }
-  ```
-- **Description**: Creates a new user in the database.
+### User Profiles (`/api/profile`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| **POST** | `/api/profile` | Create a profile for an existing user |
 
-### 3. Get All Users
-- **GET** `/api/users`
-- **Description**: Retrieves a list of all users.
+## ⚙️ Local Development Setup
 
-### 4. Get Single User
-- **GET** `/api/users/:id`
-- **Description**: Retrieves specific user details by ID. Returns `404` if not found.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Abdulmazid24/express-postgres-user-api.git
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Configure Environment:**
+   Create a `.env` file with your PostgreSQL connection string:
+   ```env
+   CONNECTION_STRING="your_neon_db_connection_string_here"
+   PORT=5000
+   ```
+4. **Run the server:**
+   ```bash
+   npm run dev
+   ```
 
-### 5. Update User
-- **PUT** `/api/users/:id`
-- **Body Payload** (Partial update supported):
-  ```json
-  {
-    "name": "John Updated",
-    "age": 29
-  }
-  ```
-- **Description**: Updates user information dynamically using SQL `COALESCE`.
+## 👨‍💻 About The Author
 
-### 6. Delete User
-- **DELETE** `/api/users/:id`
-- **Description**: Removes a user from the database by ID.
-
-## 👨‍💻 Author Information
-
-- **Name**: Abdul Mazid
-- **Email**: abdulmazid.dev@gmail.com
-- **Phone**: 01621455174
-
----
-*Developed with a passion for world-class Full-Stack Engineering.*
+**Abdul Mazid**  
+*Full-Stack MERN Developer | Distributed Systems Enthusiast*  
+[LinkedIn Profile](https://www.linkedin.com/in/abdul-mazid)
