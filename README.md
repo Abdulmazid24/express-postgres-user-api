@@ -22,8 +22,17 @@ The codebase follows a strictly modular, layer-based pattern:
 - **Cascading Deletes**: Utilized `ON DELETE CASCADE` to automatically remove orphaned profile data when a parent user is deleted, ensuring strict data integrity at the database level.
 - **SQL Injection Prevention**: Strict usage of parameterized queries (`$1, $2`).
 
-### 3. Connection Pooling (`pg.Pool`)
+### 3. Security & Authentication
+- **Password Hashing**: Integrates `bcryptjs` to hash user passwords before storing them in the database.
+- **JWT Authorization**: Utilizes `jsonwebtoken` for secure API access.
+- **Protected Routes**: Custom Express middleware to verify token validity, user existence, and account status before granting access to protected routes (e.g., Get All Users).
+
+### 4. Connection Pooling (`pg.Pool`)
 Utilizes `pg.Pool` to maintain a warm pipeline of database connections in RAM, dramatically reducing TCP/IP handshake latency for subsequent API requests.
+
+### 5. Custom Middlewares
+- **Auth Middleware**: Parses `Authorization` headers, verifies JWTs, and attaches `req.user` for downstream controllers.
+- **Logger Middleware**: Intercepts every incoming request to log the method, URL, and timestamp to a local `logger.txt` file for monitoring.
 
 ## 📁 Project Structure (Modular)
 
@@ -50,18 +59,23 @@ src/
 ## 📡 API Endpoints
 
 ### User Management (`/api/users`)
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| **POST** | `/api/users` | Create User (returns created row) |
-| **GET** | `/api/users` | Get All Users |
-| **GET** | `/api/users/:id` | Get Single User via Primary Key lookup |
-| **PUT** | `/api/users/:id` | Update User dynamically using `COALESCE` |
-| **DELETE** | `/api/users/:id` | Delete User (Triggers CASCADE delete on profile) |
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/users` | Create User (returns created row without password) | No |
+| **GET** | `/api/users` | Get All Users | Yes (JWT) |
+| **GET** | `/api/users/:id` | Get Single User via Primary Key lookup | No |
+| **PUT** | `/api/users/:id` | Update User dynamically using `COALESCE` | No |
+| **DELETE** | `/api/users/:id` | Delete User (Triggers CASCADE delete on profile) | No |
+
+### Authentication (`/api/auth`)
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/auth/login` | Login user and receive JWT Token | No |
 
 ### User Profiles (`/api/profile`)
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| **POST** | `/api/profile` | Create a profile for an existing user |
+| Method | Endpoint | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/profile` | Create a profile for an existing user | No |
 
 ## ⚙️ Local Development Setup
 

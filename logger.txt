@@ -1,0 +1,78 @@
+Method -> GET URL -> / Time -> 1779037040842
+ Method -> GET URL -> / Time -> 1779037188578
+
+ Method -> GET URL -> /users Time -> 1779037246902
+
+ Method -> GET URL -> /api/users Time -> 1779037256475
+
+ Method -> GET URL -> /api/users/1 Time -> 1779037269253
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> PUT URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> / ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users/ ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /favicon.ico ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
