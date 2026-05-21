@@ -22,16 +22,20 @@ The codebase follows a strictly modular, layer-based pattern:
 - **Cascading Deletes**: Utilized `ON DELETE CASCADE` to automatically remove orphaned profile data when a parent user is deleted, ensuring strict data integrity at the database level.
 - **SQL Injection Prevention**: Strict usage of parameterized queries (`$1, $2`).
 
-### 3. Security & Authentication
+### 3. Security, Authentication & Role-Based Access Control (RBAC)
 - **Password Hashing**: Integrates `bcryptjs` to hash user passwords before storing them in the database.
-- **JWT Authorization**: Utilizes `jsonwebtoken` for secure API access.
-- **Protected Routes**: Custom Express middleware to verify token validity, user existence, and account status before granting access to protected routes (e.g., Get All Users).
+- **JWT Authorization**: Utilizes `jsonwebtoken` for secure API access (Access Token & Refresh Token mechanism).
+- **Cookies**: Uses `cookie-parser` to securely store `refreshToken` in HTTP-Only cookies.
+- **Protected Routes & RBAC**: Custom Express middleware to verify token validity, user existence, account status, and role authorization (`admin`, `agent`, `user`) before granting access to protected routes (e.g., Get All Users).
+- **CORS Setup**: Configured `cors` middleware to restrict resource sharing origins.
 
 ### 4. Connection Pooling (`pg.Pool`)
 Utilizes `pg.Pool` to maintain a warm pipeline of database connections in RAM, dramatically reducing TCP/IP handshake latency for subsequent API requests.
 
-### 5. Custom Middlewares
-- **Auth Middleware**: Parses `Authorization` headers, verifies JWTs, and attaches `req.user` for downstream controllers.
+### 5. Custom Middlewares & Utilities
+- **Auth Middleware**: Parses `Authorization` headers, verifies JWTs, checks roles (`RBAC`), and attaches `req.user` for downstream controllers.
+- **Global Error Handler**: Intercepts uncaught errors and standardizes the error response to the client (`globalErrorHandler`).
+- **Standardized Responses**: Reusable `sendResponse` utility function ensures every API response follows the exact same JSON signature `{ success, message, data }`.
 - **Logger Middleware**: Intercepts every incoming request to log the method, URL, and timestamp to a local `logger.txt` file for monitoring.
 
 ## 📁 Project Structure (Modular)
@@ -70,7 +74,8 @@ src/
 ### Authentication (`/api/auth`)
 | Method | Endpoint | Description | Auth Required |
 | :--- | :--- | :--- | :--- |
-| **POST** | `/api/auth/login` | Login user and receive JWT Token | No |
+| **POST** | `/api/auth/login` | Login user and receive Access & Refresh Tokens | No |
+| **POST** | `/api/auth/refresh-token` | Generate new Access Token using refresh cookie | No |
 
 ### User Profiles (`/api/profile`)
 | Method | Endpoint | Description | Auth Required |

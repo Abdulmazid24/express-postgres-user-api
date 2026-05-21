@@ -76,3 +76,39 @@ Method -> GET URL -> / Time -> 1779037040842
  Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
 
  Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/login ==> function now() { [native code] } 
+
+ Method ==> PUT URL ==> /api/auth/refresh-token ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/refresh-token ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/refresh-token ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/refresh-token ==> function now() { [native code] } 
+
+ Method ==> POST URL ==> /api/auth/refresh-token ==> function now() { [native code] } 
+
+ Method ==> GET URL ==> /api/users ==> function now() { [native code] } 

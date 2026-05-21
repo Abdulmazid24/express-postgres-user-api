@@ -2,9 +2,11 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import config from '../config/env';
 import { pool } from '../db';
+import type { ROLES } from '../types';
 
-export const auth = () => {
+export const auth = (...roles: ROLES[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
+    console.log(roles);
     try {
       // console.log(req.headers.authorization);
       // 1. Check if the token exists
@@ -43,6 +45,14 @@ export const auth = () => {
           success: false,
           message: 'Forbidden',
           data: 'Your account is not active',
+        });
+      }
+
+      // console.log('Auth Role: ', user.role);
+      if (roles.length && !roles.includes(user.role)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Forbidden',
         });
       }
 
